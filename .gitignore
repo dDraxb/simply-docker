@@ -1,0 +1,4 @@
+/docker/data/mysql/
+web.log
+web-access.log
+web-error.log

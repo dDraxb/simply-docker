@@ -1,0 +1,59 @@
+version: "3.7"
+services:
+  nginx:
+    image: nginx:1.21
+    expose:
+      - "80"
+      - "443"
+    volumes:
+      - ./docker/conf/nginx/:/etc/nginx/conf.d:rw,cached
+      - ./:/var/www/html:rw,cached
+      - "${DOCKIT_PATH}/.docker/certs:/etc/nginx/conf.d/certs:ro,cached"
+    depends_on:
+      - redis
+      - mysql
+      - mailhog
+    links:
+      - php
+    environment:
+      - VIRTUAL_HOST=local-project.test
+      - VIRTUAL_PROTO=https
+      - VIRTUAL_PORT=443
+      - HTTPS_METHOD=noredirect
+    labels:
+      nl.dockit.cert: generate
+
+  php:
+    build: ./docker/images/php
+    expose:
+      - "9000"
+    volumes:
+      - ./:/var/www/html:rw,cached
+      - ./docker/conf/php/ini/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+    environment:
+      COMPOSER_MEMORY_LIMIT: -1
+      COMPOSER_PROCESS_TIMEOUT: 10000
+
+  mysql:
+    image: mysql:8
+    expose:
+      - "3306"
+    ports:
+      - "3306"
+    volumes:
+      - ./docker/data/mysql:/var/lib/mysql/:rw,delegated
+    environment:
+      MYSQL_ROOT_PASSWORD: 123
+      MYSQL_DATABASE: project
+
+  redis:
+    image: redis:4
+    expose:
+      - "6379"
+
+  mailhog:
+    image: mailhog/mailhog
+    expose:
+      - "1025"
+    ports:
+      - "8025"
